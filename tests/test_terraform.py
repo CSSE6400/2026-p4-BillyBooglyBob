@@ -3,21 +3,11 @@ from tfparse import load_from_path
 
 
 REQUIRED_PROVIDER = {
-    "required_providers": {
-        "aws": {
-            "source": "hashicorp/aws",
-            "version": "~> 6.0"
-        }
-    }
+    "required_providers": {"aws": {"source": "hashicorp/aws", "version": "~> 6.0"}}
 }
 
 PROVIDER = {
-    "provider": [
-        {
-            "region": "us-east-1",
-            "shared_credentials_files": ["./credentials"]
-        }
-    ]
+    "provider": [{"region": "us-east-1", "shared_credentials_files": ["./credentials"]}]
 }
 
 EXPECTED_SECURITY_GROUP = {
@@ -35,21 +25,21 @@ EXPECTED_SECURITY_GROUP = {
             "cidr_blocks": ["0.0.0.0/0"],
         },
     ],
-    "egress": 
-        {
-            "from_port": 0,
-            "to_port": 0,
-            "cidr_blocks": ["0.0.0.0/0"],
-        }
+    "egress": {
+        "from_port": 0,
+        "to_port": 0,
+        "cidr_blocks": ["0.0.0.0/0"],
+    },
 }
 
-USER_DATA = """#!/bin/bash
-yum install -y httpd
-systemctl enable httpd
-systemctl start httpd
-
-yum install -y git
-cd /var/www/html
+USER_DATA = """
+#!/bin/bash 
+yum install -y httpd 
+systemctl enable httpd 
+systemctl start httpd 
+ 
+yum install -y git 
+cd /var/www/html 
 git clone https://github.com/Hextris/hextris .
 """
 
@@ -57,19 +47,11 @@ EXPECTED_INSTANCE = {
     "ami": "ami-0c421724a94bba6d6",
     "instance_type": "t2.micro",
     "user_data": USER_DATA,
-    "security_groups": {
-        '__attributes__': ['aws_security_group.hextris-server.name']
-    },
-    "tags": {
-        "Name": "hextris"
-    }
+    "security_groups": {"__attributes__": ["aws_security_group.hextris-server.name"]},
+    "tags": {"Name": "hextris"},
 }
 
-EXPECTED_OUTPUT = {
-    "value": {
-        '__attribute__': 'aws_instance.hextris-server.public_ip'
-    }
-}
+EXPECTED_OUTPUT = {"value": {"__attribute__": "aws_instance.hextris-server.public_ip"}}
 
 
 class TestTerraform(unittest.TestCase):
@@ -105,18 +87,22 @@ class TestTerraform(unittest.TestCase):
         self.assertIn("terraform", self.tf, "No terraform block found")
         terraform = self.tf["terraform"][0]
         self.assertResource(terraform, REQUIRED_PROVIDER)
-   
+
     def test_provider(self):
         self.assertResource(self.tf, PROVIDER)
 
         provider = self.tf["provider"][0]
         self.assertEqual(provider["__tfmeta"]["label"], "aws", "Wrong provider")
-    
+
     def test_security_group(self):
-        self.assertIn("aws_security_group", self.tf, "No aws_security_group block found")
+        self.assertIn(
+            "aws_security_group", self.tf, "No aws_security_group block found"
+        )
         security_groups = self.tf["aws_security_group"]
 
-        security_group = self.resource_by_name(security_groups, "aws_security_group.hextris-server")
+        security_group = self.resource_by_name(
+            security_groups, "aws_security_group.hextris-server"
+        )
         self.assertIsNotNone(security_group, "No security group named hextris-server")
 
         self.assertResource(security_group, EXPECTED_SECURITY_GROUP)
